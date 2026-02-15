@@ -3,870 +3,564 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MK Intel — Mario Kart Race Annotator</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Mario Kart Race Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg-0: #0B0B0F;
-    --bg-1: #101018;
-    --bg-2: #16161F;
-    --bg-3: #1E1E2A;
-    --bg-4: #262636;
-    --border: #2A2A3A;
-    --border-hi: #3A3A50;
-    --text-1: #EEEEF2;
-    --text-2: #B0B0C0;
-    --text-3: #707088;
-    --text-4: #50506A;
-    --red: #E8364E;
-    --red-dim: #E8364E33;
-    --yellow: #F5C542;
-    --yellow-dim: #F5C54233;
-    --blue: #4A9EFF;
-    --blue-dim: #4A9EFF33;
-    --green: #3DD68C;
-    --green-dim: #3DD68C33;
-    --purple: #A86EFF;
-    --purple-dim: #A86EFF33;
-    --orange: #FF8B3E;
-    --orange-dim: #FF8B3E33;
-    --cyan: #36D6D6;
-    --cyan-dim: #36D6D633;
-    --pink: #FF5CA1;
-    --pink-dim: #FF5CA133;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Outfit', sans-serif;
-  }
-  body {
-    font-family: var(--sans); background: var(--bg-0); color: var(--text-1);
-    font-size: 13px; overflow: hidden; height: 100vh; width: 100vw;
-  }
-  input, select, button, textarea { font-family: inherit; }
-  button { cursor: pointer; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0a1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+}
 
-  /* === LAYOUT === */
-  .app { display: flex; flex-direction: column; height: 100vh; }
+/* Header */
+.header {
+    background: rgba(10, 10, 26, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #2a2a4a;
+    padding: 1.2rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.header h1 {
+    font-size: 1.6rem;
+    background: linear-gradient(135deg, #e94560, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.header .subtitle {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.2rem;
+}
 
-  /* Top Bar */
-  .topbar {
-    height: 50px; display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px; border-bottom: 1px solid var(--border); background: var(--bg-1);
-    flex-shrink: 0;
-  }
-  .topbar-left { display: flex; align-items: center; gap: 14px; }
-  .logo {
-    font-weight: 900; font-size: 18px; letter-spacing: -0.03em;
-    background: linear-gradient(135deg, var(--red), var(--orange));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .logo-sub { font-size: 11px; color: var(--text-3); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
-  .topbar-center { display: flex; align-items: center; gap: 10px; }
-  .mode-badge {
-    padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
-    letter-spacing: 0.04em; text-transform: uppercase;
-  }
-  .mode-idle { background: var(--bg-3); color: var(--text-3); }
-  .mode-active { background: var(--green-dim); color: var(--green); animation: pulse-badge 2s ease-in-out infinite; }
-  @keyframes pulse-badge { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
-  .topbar-right { display: flex; align-items: center; gap: 8px; }
-  .stat-chip {
-    padding: 4px 10px; border-radius: 6px; background: var(--bg-3);
-    font-size: 11px; font-family: var(--mono); color: var(--text-2);
-  }
-  .btn-export {
-    padding: 7px 16px; border-radius: 8px; background: var(--red); color: #fff;
-    border: none; font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
-    transition: all 0.15s;
-  }
-  .btn-export:hover { filter: brightness(1.15); transform: translateY(-1px); }
+/* Summary bar */
+.summary-bar {
+    display: flex;
+    gap: 1rem;
+    padding: 1.2rem 2rem;
+    flex-wrap: wrap;
+}
+.summary-card {
+    flex: 1;
+    min-width: 140px;
+    background: #12122a;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+}
+.summary-card .big {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffd700;
+}
+.summary-card .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666;
+    margin-top: 0.3rem;
+}
 
-  .main { display: flex; flex: 1; overflow: hidden; }
+/* Race cards */
+.races-container {
+    padding: 0 2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+.race-card {
+    background: #12122a;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.race-card:hover {
+    border-color: #e94560;
+}
+.race-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid #1e1e3a;
+}
+.race-card-header h3 {
+    color: #e94560;
+    font-size: 1.1rem;
+}
+.race-duration {
+    color: #666;
+    font-size: 0.85rem;
+    font-family: monospace;
+}
+.race-stats {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.8rem 1.2rem;
+    flex-wrap: wrap;
+}
+.stat {
+    flex: 1;
+    min-width: 60px;
+    text-align: center;
+}
+.stat-val {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #ffd700;
+}
+.stat-val.final-pos { color: #e94560; }
+.stat-val.best-pos { color: #00ff88; }
+.stat-val.worst-pos { color: #ff6b6b; }
+.stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+    margin-top: 2px;
+}
+.chart-container {
+    padding: 0.5rem 1rem 1rem;
+    height: 280px;
+}
 
-  /* === VIDEO AREA === */
-  .video-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  .video-container {
-    flex: 1; position: relative; overflow: hidden; background: var(--bg-0);
-    background-image: radial-gradient(circle at 50% 50%, #14141E 0%, #0B0B0F 100%);
-  }
+/* Final positions bar chart */
+.overview-section {
+    padding: 0 2rem 1.5rem;
+}
+.overview-card {
+    background: #12122a;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 1.2rem;
+}
+.overview-card h3 {
+    color: #e94560;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+.overview-chart-container {
+    height: 250px;
+}
 
-  /* Drop Zone */
-  .drop-zone {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 20px; cursor: pointer;
-    transition: all 0.3s;
-  }
-  .drop-zone:hover .drop-icon { border-color: var(--red); transform: scale(1.05); }
-  .drop-icon {
-    width: 140px; height: 140px; border-radius: 32px;
-    border: 2px dashed var(--border);
-    display: flex; align-items: center; justify-content: center;
-    background: var(--bg-2); transition: all 0.3s; position: relative; overflow: hidden;
-  }
-  .drop-icon::before {
-    content: ''; position: absolute; inset: 0;
-    background: conic-gradient(from 0deg, transparent, var(--red-dim), transparent);
-    animation: rotate-bg 4s linear infinite; opacity: 0.5;
-  }
-  @keyframes rotate-bg { to { transform: rotate(360deg); } }
-  .drop-icon span { font-size: 48px; position: relative; z-index: 1; }
-  .drop-title { font-weight: 700; font-size: 18px; color: var(--text-2); }
-  .drop-sub { font-size: 12px; color: var(--text-4); }
+/* Timeline */
+.timeline-section {
+    padding: 0 2rem 2rem;
+}
+.timeline-card {
+    background: #12122a;
+    border: 1px solid #2a2a4a;
+    border-radius: 12px;
+    padding: 1.2rem;
+}
+.timeline-card h3 {
+    color: #e94560;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+.timeline-chart-container {
+    height: 200px;
+}
 
-  #video-el { position: absolute; object-fit: contain; }
-  #annotation-canvas { position: absolute; z-index: 2; }
-
-  /* Bbox */
-  .place-bbox {
-    position: absolute; border: 2px solid var(--yellow); border-radius: 4px;
-    background: var(--yellow-dim); pointer-events: none;
-  }
-  .place-bbox-label {
-    position: absolute; transform: translateY(-100%);
-    background: var(--yellow); color: #000; padding: 1px 8px;
-    border-radius: 4px 4px 0 0; font-size: 10px; font-weight: 700;
-    font-family: var(--mono); pointer-events: none;
-  }
-  .draw-preview {
-    position: absolute; border: 2px dashed var(--yellow);
-    border-radius: 4px; background: var(--yellow-dim); pointer-events: none;
-  }
-  .bbox-corner {
-    position: absolute; width: 8px; height: 8px; border-radius: 2px;
-    background: #fff; border: 2px solid var(--yellow);
-    transform: translate(-50%, -50%); pointer-events: none;
-  }
-
-  /* === TIMELINE === */
-  .timeline {
-    border-top: 1px solid var(--border); background: var(--bg-1);
-    padding: 10px 20px; flex-shrink: 0;
-  }
-  .scrubber-wrap { position: relative; height: 28px; margin-bottom: 8px; }
-  .event-marker {
-    position: absolute; top: 2px; bottom: 2px; width: 3px;
-    border-radius: 2px; z-index: 1; opacity: 0.8;
-  }
-  .scrubber {
-    width: 100%; height: 100%; cursor: pointer;
-    -webkit-appearance: none; appearance: none;
-    background: transparent; position: relative; z-index: 2;
-  }
-  .scrubber::-webkit-slider-runnable-track { height: 4px; background: var(--bg-4); border-radius: 2px; }
-  .scrubber::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
-    background: var(--red); margin-top: -6px; cursor: pointer;
-    box-shadow: 0 0 12px var(--red-dim);
-  }
-  .scrubber::-moz-range-track { height: 4px; background: var(--bg-4); border-radius: 2px; border: none; }
-  .scrubber::-moz-range-thumb {
-    width: 16px; height: 16px; border-radius: 50%;
-    background: var(--red); cursor: pointer; border: none;
-  }
-  .controls { display: flex; align-items: center; gap: 6px; }
-  .c-btn {
-    width: 34px; height: 34px; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--bg-2);
-    color: var(--text-2); font-size: 14px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.12s;
-  }
-  .c-btn:hover { background: var(--bg-3); border-color: var(--border-hi); }
-  .c-play {
-    width: 42px; height: 42px; font-size: 18px;
-    background: var(--red); color: #fff; border: none; border-radius: 10px;
-  }
-  .c-play:hover { filter: brightness(1.15); }
-  .time-info {
-    margin-left: 14px; font-family: var(--mono); font-size: 12px;
-    color: var(--text-2); display: flex; gap: 14px; align-items: center;
-  }
-  .frame-hl { color: var(--yellow); font-weight: 600; }
-  .ctrl-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  .ctrl-label { font-size: 11px; color: var(--text-4); }
-  .ctrl-select {
-    padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);
-    background: var(--bg-2); color: var(--text-2);
-    font-size: 11px; font-family: var(--mono); outline: none;
-  }
-
-  /* === RIGHT PANEL === */
-  .panel {
-    width: 340px; border-left: 1px solid var(--border); background: var(--bg-1);
-    display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
-  }
-
-  /* Workflow Bar */
-  .workflow-bar {
-    padding: 14px; border-bottom: 1px solid var(--border);
-    display: flex; gap: 8px;
-  }
-  .btn-start {
-    flex: 1; padding: 10px; border-radius: 10px; border: none;
-    font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
-    transition: all 0.2s;
-  }
-  .btn-start-go { background: var(--green); color: #000; }
-  .btn-start-go:hover { filter: brightness(1.1); transform: translateY(-1px); }
-  .btn-submit { background: var(--blue); color: #fff; }
-  .btn-submit:hover { filter: brightness(1.1); transform: translateY(-1px); }
-  .btn-skip { background: var(--bg-3); color: var(--text-2); }
-  .btn-skip:hover { background: var(--bg-4); }
-
-  /* Panel Sections */
-  .p-section { padding: 14px; border-bottom: 1px solid var(--border); }
-  .p-title {
-    font-size: 10px; font-weight: 700; color: var(--text-4);
-    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px;
-  }
-
-  /* Event Flags */
-  .event-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .event-btn {
-    padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--border);
-    background: var(--bg-2); color: var(--text-2); font-size: 12px; font-weight: 600;
-    display: flex; align-items: center; gap: 8px; transition: all 0.15s;
-    position: relative; overflow: hidden;
-  }
-  .event-btn:hover { border-color: var(--border-hi); background: var(--bg-3); transform: translateY(-1px); }
-  .event-btn.flagged { animation: flag-flash 0.3s ease-out; }
-  @keyframes flag-flash { 0% { transform: scale(0.95); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
-  .event-btn .icon { font-size: 18px; flex-shrink: 0; }
-  .event-btn .label { line-height: 1.2; }
-  .event-btn.full-width { grid-column: 1 / -1; }
-
-  /* Place Tracking */
-  .place-section { display: flex; align-items: center; gap: 10px; }
-  .bbox-toggle {
-    padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
-    border: 1.5px solid var(--yellow); color: var(--yellow); background: transparent;
-    transition: all 0.15s;
-  }
-  .bbox-toggle.active { background: var(--yellow-dim); }
-  .bbox-toggle:hover { background: var(--yellow-dim); }
-  .bbox-status { font-size: 11px; color: var(--text-3); font-family: var(--mono); }
-
-  /* Race Result */
-  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .result-field label {
-    display: block; font-size: 10px; font-weight: 600; color: var(--text-3);
-    margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em;
-  }
-  .result-field input, .result-field select {
-    width: 100%; padding: 7px 10px; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--bg-2);
-    color: var(--text-1); font-size: 13px; font-family: var(--mono);
-    outline: none; transition: border-color 0.15s;
-  }
-  .result-field input:focus, .result-field select:focus { border-color: var(--blue); }
-  .result-field.full { grid-column: 1 / -1; }
-
-  /* Event Log */
-  .event-log { flex: 1; overflow-y: auto; padding: 14px; }
-  .log-empty {
-    padding: 24px; text-align: center; color: var(--text-4); font-size: 12px;
-    border: 1px dashed var(--border); border-radius: 10px; line-height: 1.6;
-  }
-  .log-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 10px; border-radius: 8px; margin-bottom: 4px;
-    background: var(--bg-2); border: 1px solid var(--border);
-    cursor: pointer; transition: all 0.12s;
-  }
-  .log-item:hover { background: var(--bg-3); border-color: var(--border-hi); }
-  .log-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-  .log-info { flex: 1; min-width: 0; }
-  .log-label { font-size: 12px; font-weight: 600; }
-  .log-meta { font-size: 10px; color: var(--text-3); font-family: var(--mono); margin-top: 1px; }
-  .log-delete {
-    width: 22px; height: 22px; border-radius: 5px; border: none;
-    background: transparent; color: var(--text-4); font-size: 12px;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: all 0.12s;
-  }
-  .log-item:hover .log-delete { opacity: 1; }
-  .log-delete:hover { color: var(--red); background: var(--red-dim); }
-
-  /* Keyboard Hints */
-  .kb-bar {
-    padding: 8px 14px; border-top: 1px solid var(--border);
-    font-size: 10px; color: var(--text-4); display: flex; flex-wrap: wrap;
-    gap: 4px 14px; font-family: var(--mono);
-  }
-  kbd {
-    display: inline-block; padding: 1px 5px; border-radius: 4px;
-    background: var(--bg-3); border: 1px solid var(--border);
-    font-size: 9px; font-family: var(--mono); color: var(--text-3);
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
-  .drag-over .drop-icon { border-color: var(--red) !important; }
-
-  .hidden { display: none !important; }
+/* Frame preview modal */
+.frame-preview-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+}
+.frame-preview-overlay.active {
+    display: flex;
+}
+.frame-preview {
+    background: #12122a;
+    border: 1px solid #e94560;
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 800px;
+    width: 90%;
+    position: relative;
+}
+.frame-preview-close {
+    position: absolute;
+    top: 0.8rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #e94560;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 10;
+    transition: color 0.2s;
+}
+.frame-preview-close:hover {
+    color: #fff;
+}
+.frame-preview video {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+    background: #000;
+}
+.frame-preview-info {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: 0.5rem 0;
+}
+.frame-preview-info .info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+}
+.frame-preview-info .info-label {
+    color: #666;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.frame-preview-info .info-value {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.chart-hint {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #444;
+    padding: 0.2rem 0 0;
+    font-style: italic;
+}
 </style>
 </head>
 <body>
-<div class="app">
-  <!-- TOP BAR -->
-  <div class="topbar">
-    <div class="topbar-left">
-      <div>
-        <div class="logo">MK INTEL</div>
-        <div class="logo-sub" id="file-name">Mario Kart Race Annotator</div>
-      </div>
+
+<div class="header">
+    <h1>Mario Kart Race Analysis</h1>
+    <div class="subtitle">1 race(s) detected from 139 frames &mdash; gameplaytrimmed.mp4</div>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-card">
+        <div class="big">1</div>
+        <div class="label">Races</div>
     </div>
-    <div class="topbar-center">
-      <div class="mode-badge mode-idle" id="mode-badge">IDLE</div>
+    <div class="summary-card">
+        <div class="big">1.0</div>
+        <div class="label">Avg Finish</div>
     </div>
-    <div class="topbar-right">
-      <div class="stat-chip" id="stat-chip">0 events logged</div>
-      <button class="btn-export" onclick="exportJSON()" id="btn-export" style="display:none">Export JSON</button>
+    <div class="summary-card">
+        <div class="big">1</div>
+        <div class="label">Wins</div>
     </div>
-  </div>
-
-  <div class="main">
-    <!-- VIDEO AREA -->
-    <div class="video-area">
-      <div class="video-container" id="video-container"
-           ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-          <div class="drop-icon"><span>🏎️</span></div>
-          <div class="drop-title">Drop a Mario Kart recording here</div>
-          <div class="drop-sub">MP4, WebM, MOV — then annotate races frame by frame</div>
-        </div>
-        <video id="video-el" style="display:none" muted></video>
-        <div id="annotation-canvas" style="display:none"
-             onmousedown="canvasMouseDown(event)"
-             onmousemove="canvasMouseMove(event)"
-             onmouseup="canvasMouseUp(event)"
-             onmouseleave="canvasMouseUp(event)">
-        </div>
-        <input type="file" id="file-input" accept="video/*" style="display:none" onchange="handleUpload(event)">
-      </div>
-
-      <!-- TIMELINE -->
-      <div class="timeline hidden" id="timeline">
-        <div class="scrubber-wrap" id="scrubber-wrap">
-          <input type="range" class="scrubber" id="scrubber" min="0" max="0" value="0" oninput="scrubTo(this.value)">
-        </div>
-        <div class="controls">
-          <button class="c-btn" onclick="stepFrame(-10)" title="Back 10">⏪</button>
-          <button class="c-btn" onclick="stepFrame(-1)" title="Back 1">◀</button>
-          <button class="c-btn c-play" id="play-btn" onclick="togglePlay()">▶</button>
-          <button class="c-btn" onclick="stepFrame(1)" title="Forward 1">▶</button>
-          <button class="c-btn" onclick="stepFrame(10)" title="Forward 10">⏩</button>
-          <div class="time-info">
-            <span id="time-display">0:00.00 / 0:00.00</span>
-            <span style="color:var(--text-4)">·</span>
-            <span>Frame <span class="frame-hl" id="frame-display">0</span> / <span id="total-frames">0</span></span>
-          </div>
-          <div class="ctrl-right">
-            <span class="ctrl-label">FPS</span>
-            <select class="ctrl-select" id="fps-select" onchange="changeFps(this.value)">
-              <option value="24">24</option><option value="25">25</option>
-              <option value="29.97">29.97</option><option value="30" selected>30</option>
-              <option value="60">60</option>
-            </select>
-            <span class="ctrl-label" style="margin-left:6px">Speed</span>
-            <select class="ctrl-select" id="speed-select" onchange="changeSpeed(this.value)">
-              <option value="0.25">0.25×</option><option value="0.5">0.5×</option>
-              <option value="1" selected>1×</option><option value="1.5">1.5×</option>
-              <option value="2">2×</option>
-            </select>
-          </div>
-        </div>
-      </div>
+    <div class="summary-card">
+        <div class="big">1</div>
+        <div class="label">Podiums</div>
     </div>
-
-    <!-- RIGHT PANEL -->
-    <div class="panel hidden" id="panel">
-      <!-- Workflow -->
-      <div class="workflow-bar" id="workflow-bar">
-        <button class="btn-start btn-start-go" id="btn-start" onclick="startAnnotation()">▶ Start Annotating</button>
-      </div>
-
-      <!-- Event Flags -->
-      <div class="p-section" id="event-section">
-        <div class="p-title">⚡ Flag Event at Current Frame</div>
-        <div class="event-grid" id="event-grid">
-          <button class="event-btn" onclick="flagEvent('lightning')" id="ev-lightning">
-            <span class="icon">⚡</span><span class="label">Lightning</span>
-          </button>
-          <button class="event-btn" onclick="flagEvent('blue_shell')" id="ev-blue_shell">
-            <span class="icon">🔵</span><span class="label">Blue Shell</span>
-          </button>
-          <button class="event-btn" onclick="flagEvent('star')" id="ev-star">
-            <span class="icon">⭐</span><span class="label">Star</span>
-          </button>
-          <button class="event-btn" onclick="flagEvent('bullet_bill')" id="ev-bullet_bill">
-            <span class="icon">🚀</span><span class="label">Bullet Bill</span>
-          </button>
-          <button class="event-btn" onclick="flagEvent('item_pickup')" id="ev-item_pickup">
-            <span class="icon">📦</span><span class="label">Item Pickup</span>
-          </button>
-          <button class="event-btn" onclick="flagEvent('fall')" id="ev-fall">
-            <span class="icon">💀</span><span class="label">Fall / OOB</span>
-          </button>
-          <button class="event-btn full-width" onclick="flagEvent('race_over')" id="ev-race_over" style="border-color:var(--red-dim);">
-            <span class="icon">🏁</span><span class="label">Race Over</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Place Card Tracking -->
-      <div class="p-section">
-        <div class="p-title">📍 Place Card Tracking</div>
-        <div class="place-section">
-          <button class="bbox-toggle" id="bbox-toggle" onclick="toggleBboxDraw()">Draw Box</button>
-          <span class="bbox-status" id="bbox-status">No box on this frame</span>
-          <button class="bbox-toggle" id="bbox-clear" onclick="clearBbox()" style="border-color:var(--text-4);color:var(--text-4);display:none;font-size:11px;padding:6px 10px;">Clear</button>
-        </div>
-      </div>
-
-      <!-- Race Result -->
-      <div class="p-section" id="result-section">
-        <div class="p-title">🏆 Race Result</div>
-        <div class="result-grid">
-          <div class="result-field">
-            <label>Finish Place</label>
-            <select id="res-place">
-              <option value="">—</option>
-              <option value="1">1st</option><option value="2">2nd</option>
-              <option value="3">3rd</option><option value="4">4th</option>
-              <option value="5">5th</option><option value="6">6th</option>
-              <option value="7">7th</option><option value="8">8th</option>
-              <option value="9">9th</option><option value="10">10th</option>
-              <option value="11">11th</option><option value="12">12th</option>
-            </select>
-          </div>
-          <div class="result-field">
-            <label>Rating Before</label>
-            <input type="number" id="res-rating-before" placeholder="e.g. 12400">
-          </div>
-          <div class="result-field">
-            <label>Rating Change</label>
-            <input type="text" id="res-rating-change" placeholder="e.g. +14 or -22">
-          </div>
-          <div class="result-field">
-            <label>
-              <button onclick="saveRaceResult()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;">Save Result</button>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Event Log -->
-      <div class="event-log" id="event-log">
-        <div class="p-title">📋 Event Log</div>
-        <div id="log-content">
-          <div class="log-empty">No events logged yet.<br>Navigate the video and flag events as you see them.</div>
-        </div>
-      </div>
-
-      <!-- Keyboard Hints -->
-      <div class="kb-bar">
-        <span><kbd>Space</kbd> Play</span>
-        <span><kbd>←→</kbd> Step</span>
-        <span><kbd>⇧←→</kbd> ×10</span>
-        <span><kbd>B</kbd> Box</span>
-        <span><kbd>1-7</kbd> Flags</span>
-        <span><kbd>Enter</kbd> Submit</span>
-      </div>
+    <div class="summary-card">
+        <div class="big">132s</div>
+        <div class="label">Total Race Time</div>
     </div>
-  </div>
+</div>
+
+<!-- Overview: final positions across races -->
+
+
+<!-- Full session timeline -->
+<div class="timeline-section">
+    <div class="timeline-card">
+        <h3>Session Timeline (scene classification)</h3>
+        <div class="timeline-chart-container">
+            <canvas id="chart-timeline"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Per-race cards -->
+<div class="races-container">
+
+        <div class="race-card" data-race="1">
+            <div class="race-card-header">
+                <h3>Race 1</h3>
+                <span class="race-duration">132s</span>
+            </div>
+            <div class="race-stats">
+                <div class="stat">
+                    <div class="stat-val final-pos">1st</div>
+                    <div class="stat-label">Final</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-val best-pos">1st</div>
+                    <div class="stat-label">Best</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-val worst-pos">5th</div>
+                    <div class="stat-label">Worst</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-val">1.2</div>
+                    <div class="stat-label">Avg</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-val">4</div>
+                    <div class="stat-label">Changes</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="chart-race-1"></canvas>
+            </div>
+            <div class="chart-hint">Click any point to preview video frame</div>
+        </div>
+</div>
+
+<!-- Frame preview modal -->
+<div class="frame-preview-overlay" id="frame-preview-overlay">
+    <div class="frame-preview">
+        <button class="frame-preview-close" onclick="closeFramePreview()">&times;</button>
+        <video id="frame-preview-video" preload="metadata" controls></video>
+        <div class="frame-preview-info" id="frame-preview-info"></div>
+    </div>
 </div>
 
 <script>
-// ===================== STATE =====================
-let videoSrc = null, videoName = "", isPlaying = false;
-let currentTime = 0, duration = 0, fps = 30, currentFrame = 0;
-let animFrame = null;
+const RACES = [{"race_number": 1, "start_time": 1, "end_time": 133, "duration": 132, "total_frames": 138, "in_race_frames": 138, "position_history": [{"timestamp": 7, "position": 1, "relative_time": 6}, {"timestamp": 8, "position": 1, "relative_time": 7}, {"timestamp": 9, "position": 1, "relative_time": 8}, {"timestamp": 10, "position": 1, "relative_time": 9}, {"timestamp": 11, "position": 1, "relative_time": 10}, {"timestamp": 12, "position": 1, "relative_time": 11}, {"timestamp": 13, "position": 1, "relative_time": 12}, {"timestamp": 14, "position": 1, "relative_time": 13}, {"timestamp": 15, "position": 1, "relative_time": 14}, {"timestamp": 15, "position": 1, "relative_time": 14}, {"timestamp": 16, "position": 1, "relative_time": 15}, {"timestamp": 17, "position": 1, "relative_time": 16}, {"timestamp": 18, "position": 1, "relative_time": 17}, {"timestamp": 19, "position": 1, "relative_time": 18}, {"timestamp": 20, "position": 2, "relative_time": 19}, {"timestamp": 21, "position": 2, "relative_time": 20}, {"timestamp": 22, "position": 2, "relative_time": 21}, {"timestamp": 23, "position": 2, "relative_time": 22}, {"timestamp": 24, "position": 2, "relative_time": 23}, {"timestamp": 26, "position": 2, "relative_time": 25}, {"timestamp": 27, "position": 2, "relative_time": 26}, {"timestamp": 28, "position": 2, "relative_time": 27}, {"timestamp": 29, "position": 2, "relative_time": 28}, {"timestamp": 30, "position": 2, "relative_time": 29}, {"timestamp": 31, "position": 2, "relative_time": 30}, {"timestamp": 32, "position": 2, "relative_time": 31}, {"timestamp": 33, "position": 2, "relative_time": 32}, {"timestamp": 34, "position": 2, "relative_time": 33}, {"timestamp": 35, "position": 2, "relative_time": 34}, {"timestamp": 36, "position": 2, "relative_time": 35}, {"timestamp": 37, "position": 2, "relative_time": 36}, {"timestamp": 38, "position": 2, "relative_time": 37}, {"timestamp": 39, "position": 2, "relative_time": 38}, {"timestamp": 40, "position": 2, "relative_time": 39}, {"timestamp": 41, "position": 2, "relative_time": 40}, {"timestamp": 42, "position": 1, "relative_time": 41}, {"timestamp": 43, "position": 1, "relative_time": 42}, {"timestamp": 44, "position": 1, "relative_time": 43}, {"timestamp": 44, "position": 1, "relative_time": 43}, {"timestamp": 45, "position": 1, "relative_time": 44}, {"timestamp": 46, "position": 1, "relative_time": 45}, {"timestamp": 47, "position": 1, "relative_time": 46}, {"timestamp": 48, "position": 1, "relative_time": 47}, {"timestamp": 49, "position": 1, "relative_time": 48}, {"timestamp": 50, "position": 1, "relative_time": 49}, {"timestamp": 51, "position": 1, "relative_time": 50}, {"timestamp": 52, "position": 1, "relative_time": 51}, {"timestamp": 54, "position": 1, "relative_time": 53}, {"timestamp": 55, "position": 1, "relative_time": 54}, {"timestamp": 56, "position": 1, "relative_time": 55}, {"timestamp": 57, "position": 1, "relative_time": 56}, {"timestamp": 58, "position": 1, "relative_time": 57}, {"timestamp": 59, "position": 1, "relative_time": 58}, {"timestamp": 60, "position": 1, "relative_time": 59}, {"timestamp": 61, "position": 1, "relative_time": 60}, {"timestamp": 62, "position": 1, "relative_time": 61}, {"timestamp": 63, "position": 1, "relative_time": 62}, {"timestamp": 64, "position": 1, "relative_time": 63}, {"timestamp": 65, "position": 1, "relative_time": 64}, {"timestamp": 66, "position": 1, "relative_time": 65}, {"timestamp": 67, "position": 1, "relative_time": 66}, {"timestamp": 68, "position": 1, "relative_time": 67}, {"timestamp": 69, "position": 1, "relative_time": 68}, {"timestamp": 70, "position": 1, "relative_time": 69}, {"timestamp": 71, "position": 1, "relative_time": 70}, {"timestamp": 72, "position": 1, "relative_time": 71}, {"timestamp": 73, "position": 1, "relative_time": 72}, {"timestamp": 75, "position": 1, "relative_time": 74}, {"timestamp": 76, "position": 1, "relative_time": 75}, {"timestamp": 77, "position": 1, "relative_time": 76}, {"timestamp": 78, "position": 1, "relative_time": 77}, {"timestamp": 79, "position": 1, "relative_time": 78}, {"timestamp": 80, "position": 1, "relative_time": 79}, {"timestamp": 81, "position": 1, "relative_time": 80}, {"timestamp": 82, "position": 1, "relative_time": 81}, {"timestamp": 83, "position": 1, "relative_time": 82}, {"timestamp": 84, "position": 1, "relative_time": 83}, {"timestamp": 85, "position": 1, "relative_time": 84}, {"timestamp": 86, "position": 1, "relative_time": 85}, {"timestamp": 87, "position": 1, "relative_time": 86}, {"timestamp": 89, "position": 1, "relative_time": 88}, {"timestamp": 90, "position": 1, "relative_time": 89}, {"timestamp": 92, "position": 1, "relative_time": 91}, {"timestamp": 93, "position": 1, "relative_time": 92}, {"timestamp": 94, "position": 1, "relative_time": 93}, {"timestamp": 95, "position": 1, "relative_time": 94}, {"timestamp": 96, "position": 1, "relative_time": 95}, {"timestamp": 97, "position": 1, "relative_time": 96}, {"timestamp": 98, "position": 1, "relative_time": 97}, {"timestamp": 99, "position": 1, "relative_time": 98}, {"timestamp": 100, "position": 1, "relative_time": 99}, {"timestamp": 101, "position": 1, "relative_time": 100}, {"timestamp": 102, "position": 1, "relative_time": 101}, {"timestamp": 102, "position": 1, "relative_time": 101}, {"timestamp": 103, "position": 1, "relative_time": 102}, {"timestamp": 104, "position": 1, "relative_time": 103}, {"timestamp": 105, "position": 1, "relative_time": 104}, {"timestamp": 106, "position": 1, "relative_time": 105}, {"timestamp": 107, "position": 1, "relative_time": 106}, {"timestamp": 108, "position": 1, "relative_time": 107}, {"timestamp": 109, "position": 1, "relative_time": 108}, {"timestamp": 110, "position": 1, "relative_time": 109}, {"timestamp": 111, "position": 1, "relative_time": 110}, {"timestamp": 112, "position": 1, "relative_time": 111}, {"timestamp": 113, "position": 1, "relative_time": 112}, {"timestamp": 114, "position": 1, "relative_time": 113}, {"timestamp": 115, "position": 1, "relative_time": 114}, {"timestamp": 116, "position": 1, "relative_time": 115}, {"timestamp": 117, "position": 1, "relative_time": 116}, {"timestamp": 118, "position": 1, "relative_time": 117}, {"timestamp": 119, "position": 1, "relative_time": 118}, {"timestamp": 120, "position": 1, "relative_time": 119}, {"timestamp": 121, "position": 1, "relative_time": 120}, {"timestamp": 122, "position": 1, "relative_time": 121}, {"timestamp": 123, "position": 1, "relative_time": 122}, {"timestamp": 124, "position": 1, "relative_time": 123}, {"timestamp": 125, "position": 1, "relative_time": 124}, {"timestamp": 126, "position": 1, "relative_time": 125}, {"timestamp": 127, "position": 1, "relative_time": 126}, {"timestamp": 129, "position": 5, "relative_time": 128}, {"timestamp": 130, "position": 1, "relative_time": 129}, {"timestamp": 131, "position": 1, "relative_time": 130}, {"timestamp": 131, "position": 1, "relative_time": 130}, {"timestamp": 132, "position": 1, "relative_time": 131}], "best_position": 1, "worst_position": 5, "final_position": 1, "avg_position": 1.2, "position_changes": 4}];
+const FRAMES = [{"timestamp": 0, "scene": "not_in_race", "position": null, "raw_scene": "not_in_race", "raw_position": ""}, {"timestamp": 1, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": "Final Race"}, {"timestamp": 2, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": "Final Race"}, {"timestamp": 3, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": "Final Race"}, {"timestamp": 4, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": "Finish Line"}, {"timestamp": 5, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": "Finish Line"}, {"timestamp": 6, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": "Finish Line"}, {"timestamp": 7, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 8, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 9, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 10, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 11, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 12, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 13, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 14, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 15, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 15, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 16, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 17, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 18, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 19, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 20, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 21, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 22, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 23, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2"}, {"timestamp": 24, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 25, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": ""}, {"timestamp": 26, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2"}, {"timestamp": 27, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 28, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 29, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 30, "scene": "in_race", "position": 2, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 31, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2"}, {"timestamp": 32, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 33, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 34, "scene": "in_race", "position": 2, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 35, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 36, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2"}, {"timestamp": 37, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 38, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 39, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2nd"}, {"timestamp": 40, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2"}, {"timestamp": 41, "scene": "in_race", "position": 2, "raw_scene": "in_race", "raw_position": "2"}, {"timestamp": 42, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 43, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 44, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 44, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 45, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 46, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 47, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 48, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 49, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 50, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 51, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 52, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 53, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": ""}, {"timestamp": 54, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 55, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 56, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 57, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 58, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 59, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 60, "scene": "in_race", "position": 1, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 61, "scene": "in_race", "position": 1, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 62, "scene": "in_race", "position": 1, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 63, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 64, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 65, "scene": "in_race", "position": 1, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 66, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 67, "scene": "in_race", "position": 1, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 68, "scene": "in_race", "position": 1, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 69, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 70, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 71, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 72, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 73, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 73, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": ""}, {"timestamp": 74, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": ""}, {"timestamp": 75, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 76, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 77, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 78, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 79, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 80, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 81, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 82, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 83, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 84, "scene": "in_race", "position": 1, "raw_scene": "", "raw_position": "", "imputed": true}, {"timestamp": 85, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 86, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 87, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 88, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": ""}, {"timestamp": 89, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 90, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 91, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": ""}, {"timestamp": 92, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 93, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 94, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 95, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 96, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 97, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 98, "scene": "in_race", "position": 1, "raw_scene": "not_in_race", "raw_position": "", "imputed": true}, {"timestamp": 99, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 100, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 101, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 102, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 102, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 103, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 104, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 105, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 106, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 107, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 108, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 109, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 110, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 111, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 112, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 113, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 114, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 115, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 116, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 117, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 118, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 119, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 120, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 121, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 122, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 123, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 124, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 125, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 126, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 127, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1st"}, {"timestamp": 128, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": "23"}, {"timestamp": 129, "scene": "in_race", "position": 5, "raw_scene": "in_race", "raw_position": "5"}, {"timestamp": 130, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 131, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 131, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 132, "scene": "in_race", "position": 1, "raw_scene": "in_race", "raw_position": "1"}, {"timestamp": 133, "scene": "in_race", "position": null, "raw_scene": "in_race", "raw_position": "Sky Kingdom"}];
 
-// Annotation state
-let events = [];          // { type, frame, time, id }
-let placeBoxes = {};      // frame -> { x1, y1, x2, y2 }
-let raceResult = null;    // { place, ratingBefore, ratingChange, frame }
+// Chart.js defaults for dark theme
+Chart.defaults.color = '#888';
+Chart.defaults.borderColor = '#2a2a4a';
 
-// Drawing state
-let bboxDrawMode = false;
-let isDrawing = false, drawStart = null, drawCurrent = null;
-
-// Workflow
-let annotating = false;
-
-// Video sizing
-let videoSize = { w: 0, h: 0 };
-let canvasOffset = { x: 0, y: 0 };
-
-// DOM
-const videoEl = document.getElementById("video-el");
-const aCanvas = document.getElementById("annotation-canvas");
-const container = document.getElementById("video-container");
-const scrubber = document.getElementById("scrubber");
-
-const EVENT_META = {
-  lightning:   { icon: "⚡", label: "Lightning",   color: "var(--yellow)", colorHex: "#F5C542" },
-  blue_shell:  { icon: "🔵", label: "Blue Shell",   color: "var(--blue)",   colorHex: "#4A9EFF" },
-  star:        { icon: "⭐", label: "Star",         color: "var(--orange)", colorHex: "#FF8B3E" },
-  bullet_bill: { icon: "🚀", label: "Bullet Bill",  color: "var(--purple)", colorHex: "#A86EFF" },
-  item_pickup: { icon: "📦", label: "Item Pickup",  color: "var(--cyan)",   colorHex: "#36D6D6" },
-  fall:        { icon: "💀", label: "Fall / OOB",   color: "var(--pink)",   colorHex: "#FF5CA1" },
-  race_over:   { icon: "🏁", label: "Race Over",    color: "var(--red)",    colorHex: "#E8364E" },
-};
-
-// ===================== HELPERS =====================
-function formatTime(t) {
-  const m = Math.floor(t / 60), s = Math.floor(t % 60), ms = Math.floor((t % 1) * 100);
-  return `${m}:${s.toString().padStart(2,"0")}.${ms.toString().padStart(2,"0")}`;
+// -- Helper: ordinal --
+function ordinal(n) {
+    if (n == null) return '?';
+    const s = ['th','st','nd','rd'];
+    const v = n % 100;
+    return n + (s[(v-20)%10] || s[v] || 'th');
 }
-function getFrameBox() { return placeBoxes[currentFrame] || null; }
 
-// ===================== VIDEO LOAD =====================
-function loadVideo(file) {
-  if (videoSrc) URL.revokeObjectURL(videoSrc);
-  videoSrc = URL.createObjectURL(file);
-  videoName = file.name;
-  videoEl.src = videoSrc;
-  events = []; placeBoxes = {}; raceResult = null; annotating = false;
-  currentTime = 0; currentFrame = 0;
-  document.getElementById("file-name").textContent = file.name;
-}
-function handleUpload(e) { if (e.target.files[0]) loadVideo(e.target.files[0]); }
-function handleDrop(e) {
-  e.preventDefault(); container.classList.remove("drag-over");
-  const f = e.dataTransfer.files[0];
-  if (f && f.type.startsWith("video/")) loadVideo(f);
-}
-function handleDragOver(e) { e.preventDefault(); container.classList.add("drag-over"); }
-function handleDragLeave() { container.classList.remove("drag-over"); }
+// -- Per-race position charts --
+RACES.forEach(race => {
+    const ctx = document.getElementById('chart-race-' + race.race_number);
+    if (!ctx || !race.position_history.length) return;
 
-videoEl.addEventListener("loadedmetadata", () => {
-  duration = videoEl.duration;
-  scrubber.max = Math.floor(duration * fps);
-  document.getElementById("total-frames").textContent = Math.floor(duration * fps);
-  document.getElementById("drop-zone").style.display = "none";
-  videoEl.style.display = "block";
-  aCanvas.style.display = "block";
-  document.getElementById("timeline").classList.remove("hidden");
-  document.getElementById("panel").classList.remove("hidden");
-  document.getElementById("btn-export").style.display = "inline-block";
-  updateVideoSize();
-  updateTimeDisplay();
-  renderCanvas();
-  renderLog();
-  updateWorkflow();
+    const labels = race.position_history.map(p => p.relative_time);
+    const data = race.position_history.map(p => p.position);
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Position',
+                data: data,
+                borderColor: '#e94560',
+                backgroundColor: 'rgba(233, 69, 96, 0.1)',
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointBackgroundColor: '#e94560',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 1,
+                fill: true,
+                tension: 0.2,
+            }]
+        },
+        options: {
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const idx = elements[0].index;
+                    const point = race.position_history[idx];
+                    showFramePreview(point.timestamp, point.position, race.race_number, point.relative_time);
+                }
+            },
+            onHover: (event, elements) => {
+                const canvas = event.native.target;
+                canvas.style.cursor = elements.length ? 'pointer' : 'default';
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    reverse: true,
+                    min: 0.5,
+                    max: 12.5,
+                    ticks: {
+                        stepSize: 1,
+                        callback: v => ordinal(Math.round(v)),
+                    },
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                },
+                x: {
+                    title: { display: true, text: 'Time (seconds)', color: '#888' },
+                    grid: { color: 'rgba(255,255,255,0.03)' },
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ordinal(ctx.parsed.y) + ' place',
+                        title: items => items[0].label + 's into race',
+                    }
+                }
+            }
+        }
+    });
 });
-videoEl.addEventListener("ended", () => { isPlaying = false; document.getElementById("play-btn").textContent = "▶"; });
 
-function updateVideoSize() {
-  if (!videoEl.videoWidth) return;
-  const rect = container.getBoundingClientRect();
-  const va = videoEl.videoWidth / videoEl.videoHeight, ca = rect.width / rect.height;
-  let w, h;
-  if (va > ca) { w = rect.width; h = w / va; } else { h = rect.height; w = h * va; }
-  videoSize = { w, h };
-  canvasOffset = { x: (rect.width - w) / 2, y: (rect.height - h) / 2 };
-  videoEl.style.left = canvasOffset.x + "px"; videoEl.style.top = canvasOffset.y + "px";
-  videoEl.style.width = w + "px"; videoEl.style.height = h + "px";
-  aCanvas.style.left = canvasOffset.x + "px"; aCanvas.style.top = canvasOffset.y + "px";
-  aCanvas.style.width = w + "px"; aCanvas.style.height = h + "px";
-}
-window.addEventListener("resize", updateVideoSize);
+// -- Overview: final positions bar chart --
+if (RACES.length >= 2) {
+    const overviewCtx = document.getElementById('chart-overview');
+    if (overviewCtx) {
+        const labels = RACES.map(r => 'Race ' + r.race_number);
+        const data = RACES.map(r => r.final_position);
+        const colors = data.map(p => {
+            if (p === 1) return '#ffd700';
+            if (p === 2) return '#c0c0c0';
+            if (p === 3) return '#cd7f32';
+            if (p <= 6) return '#4488ff';
+            return '#e94560';
+        });
 
-// ===================== PLAYBACK =====================
-function togglePlay() {
-  if (!videoSrc) return;
-  if (isPlaying) videoEl.pause(); else videoEl.play();
-  isPlaying = !isPlaying;
-  document.getElementById("play-btn").textContent = isPlaying ? "⏸" : "▶";
-  if (isPlaying) syncLoop();
-}
-function syncLoop() {
-  if (!isPlaying) return;
-  currentTime = videoEl.currentTime;
-  currentFrame = Math.floor(currentTime * fps);
-  scrubber.value = currentFrame;
-  updateTimeDisplay(); renderCanvas();
-  animFrame = requestAnimationFrame(syncLoop);
-}
-function seekToFrame(f) {
-  const t = f / fps; videoEl.currentTime = t;
-  currentTime = t; currentFrame = f; scrubber.value = f;
-  updateTimeDisplay(); renderCanvas();
-}
-function stepFrame(d) {
-  if (isPlaying) { videoEl.pause(); isPlaying = false; document.getElementById("play-btn").textContent = "▶"; }
-  seekToFrame(Math.max(0, Math.min(Math.floor(duration * fps), currentFrame + d)));
-}
-function scrubTo(v) { seekToFrame(parseInt(v)); }
-function changeFps(v) {
-  fps = parseFloat(v); scrubber.max = Math.floor(duration * fps);
-  document.getElementById("total-frames").textContent = Math.floor(duration * fps);
-  currentFrame = Math.floor(currentTime * fps); scrubber.value = currentFrame;
-  updateTimeDisplay();
-}
-function changeSpeed(v) { videoEl.playbackRate = parseFloat(v); }
-function updateTimeDisplay() {
-  document.getElementById("time-display").textContent = formatTime(currentTime) + " / " + formatTime(duration);
-  document.getElementById("frame-display").textContent = currentFrame;
-  // Update bbox status
-  const box = getFrameBox();
-  document.getElementById("bbox-status").textContent = box ? `Box set (${box.x1.toFixed(0)}%, ${box.y1.toFixed(0)}%)` : "No box on this frame";
-  document.getElementById("bbox-clear").style.display = box ? "inline-block" : "none";
-}
-
-// ===================== WORKFLOW =====================
-function startAnnotation() {
-  annotating = true;
-  updateWorkflow();
-  const badge = document.getElementById("mode-badge");
-  badge.textContent = "ANNOTATING";
-  badge.className = "mode-badge mode-active";
-}
-function submitAndNext() {
-  stepFrame(1);
-}
-function updateWorkflow() {
-  const bar = document.getElementById("workflow-bar");
-  if (!annotating) {
-    bar.innerHTML = `<button class="btn-start btn-start-go" onclick="startAnnotation()">▶ Start Annotating</button>`;
-  } else {
-    bar.innerHTML = `
-      <button class="btn-start btn-skip" onclick="stepFrame(-1)">← Back</button>
-      <button class="btn-start btn-submit" onclick="submitAndNext()">Submit & Next →</button>
-      <button class="btn-start btn-skip" onclick="stepFrame(10)" style="flex:0.5">Skip 10 →</button>
-    `;
-  }
-}
-
-// ===================== EVENT FLAGS =====================
-function flagEvent(type) {
-  const ev = { type, frame: currentFrame, time: currentTime, id: Date.now() };
-  events.push(ev);
-  events.sort((a, b) => a.frame - b.frame);
-
-  // Flash animation
-  const btn = document.getElementById("ev-" + type);
-  btn.classList.remove("flagged");
-  void btn.offsetWidth;
-  btn.classList.add("flagged");
-
-  renderLog();
-  renderTimelineMarkers();
-  updateStats();
-}
-function deleteEvent(id) {
-  events = events.filter(e => e.id !== id);
-  renderLog(); renderTimelineMarkers(); updateStats();
-}
-function updateStats() {
-  document.getElementById("stat-chip").textContent =
-    `${events.length} event${events.length !== 1 ? "s" : ""} · ${Object.keys(placeBoxes).length} boxes`;
-}
-
-// ===================== PLACE BBOX =====================
-function toggleBboxDraw() {
-  bboxDrawMode = !bboxDrawMode;
-  const btn = document.getElementById("bbox-toggle");
-  btn.classList.toggle("active", bboxDrawMode);
-  btn.textContent = bboxDrawMode ? "Drawing..." : "Draw Box";
-  aCanvas.style.cursor = bboxDrawMode ? "crosshair" : "default";
-}
-function clearBbox() {
-  delete placeBoxes[currentFrame];
-  renderCanvas(); updateTimeDisplay(); updateStats();
-}
-function toCoords(e) {
-  const r = aCanvas.getBoundingClientRect();
-  return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 };
-}
-function canvasMouseDown(e) {
-  if (!bboxDrawMode) return;
-  isDrawing = true;
-  drawStart = toCoords(e);
-  drawCurrent = drawStart;
-}
-function canvasMouseMove(e) {
-  if (!isDrawing) return;
-  drawCurrent = toCoords(e);
-  renderCanvas();
-}
-function canvasMouseUp() {
-  if (!isDrawing) return;
-  if (drawStart && drawCurrent) {
-    const w = Math.abs(drawCurrent.x - drawStart.x), h = Math.abs(drawCurrent.y - drawStart.y);
-    if (w > 1 && h > 1) {
-      placeBoxes[currentFrame] = {
-        x1: Math.min(drawStart.x, drawCurrent.x), y1: Math.min(drawStart.y, drawCurrent.y),
-        x2: Math.max(drawStart.x, drawCurrent.x), y2: Math.max(drawStart.y, drawCurrent.y),
-      };
-      // Auto-exit draw mode
-      bboxDrawMode = false;
-      document.getElementById("bbox-toggle").classList.remove("active");
-      document.getElementById("bbox-toggle").textContent = "Draw Box";
-      aCanvas.style.cursor = "default";
-      updateStats();
+        new Chart(overviewCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Final Position',
+                    data: data,
+                    backgroundColor: colors,
+                    borderRadius: 6,
+                    barThickness: 40,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        reverse: true,
+                        min: 0,
+                        max: 13,
+                        ticks: {
+                            stepSize: 1,
+                            callback: v => v === 0 ? '' : ordinal(v),
+                        },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                    },
+                    x: {
+                        grid: { display: false },
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ordinal(ctx.parsed.y) + ' place',
+                        }
+                    }
+                }
+            }
+        });
     }
-  }
-  isDrawing = false; drawStart = null; drawCurrent = null;
-  renderCanvas(); updateTimeDisplay();
 }
 
-// ===================== RACE RESULT =====================
-function saveRaceResult() {
-  const place = document.getElementById("res-place").value;
-  const rBefore = document.getElementById("res-rating-before").value;
-  const rChange = document.getElementById("res-rating-change").value;
-  raceResult = {
-    place: place || null,
-    ratingBefore: rBefore ? parseInt(rBefore) : null,
-    ratingChange: rChange || null,
-    frame: currentFrame, time: currentTime,
-  };
-  // Visual feedback
-  const btn = event.target;
-  const orig = btn.textContent;
-  btn.textContent = "✓ Saved!";
-  btn.style.background = "var(--green)";
-  setTimeout(() => { btn.textContent = orig; btn.style.background = "var(--blue)"; }, 1200);
-}
+// -- Session timeline --
+(function() {
+    const ctx = document.getElementById('chart-timeline');
+    if (!ctx || !FRAMES.length) return;
 
-// ===================== RENDERING =====================
-function renderCanvas() {
-  let html = "";
-  // Place bounding box for current frame
-  const box = getFrameBox();
-  if (box) {
-    const l = box.x1, t = box.y1, w = box.x2 - box.x1, h = box.y2 - box.y1;
-    html += `<div class="place-bbox" style="left:${l}%;top:${t}%;width:${w}%;height:${h}%"></div>`;
-    html += `<div class="place-bbox-label" style="left:${l}%;top:${t}%">PLACE CARD</div>`;
-    [[l,t],[l+w,t],[l,t+h],[l+w,t+h]].forEach(([cx,cy]) => {
-      html += `<div class="bbox-corner" style="left:${cx}%;top:${cy}%"></div>`;
+    const labels = FRAMES.map(f => f.timestamp);
+    const data = FRAMES.map(f => f.scene === 'in_race' ? 1 : 0);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'In Race',
+                data: data,
+                backgroundColor: data.map(v => v ? 'rgba(233, 69, 96, 0.7)' : 'rgba(100, 100, 140, 0.3)'),
+                borderWidth: 0,
+                barPercentage: 1.0,
+                categoryPercentage: 1.0,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    display: false,
+                    max: 1.2,
+                },
+                x: {
+                    title: { display: true, text: 'Time (seconds)', color: '#888' },
+                    grid: { display: false },
+                    ticks: {
+                        maxTicksLimit: 20,
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.parsed.y === 1 ? 'In Race' : 'Not In Race',
+                        title: items => items[0].label + 's',
+                    }
+                }
+            }
+        }
     });
-  }
-  // Draw preview
-  if (isDrawing && drawStart && drawCurrent) {
-    html += `<div class="draw-preview" style="
-      left:${Math.min(drawStart.x,drawCurrent.x)}%;top:${Math.min(drawStart.y,drawCurrent.y)}%;
-      width:${Math.abs(drawCurrent.x-drawStart.x)}%;height:${Math.abs(drawCurrent.y-drawStart.y)}%;
-    "></div>`;
-  }
-  // Event indicators on current frame
-  const frameEvents = events.filter(e => e.frame === currentFrame);
-  if (frameEvents.length) {
-    html += `<div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;pointer-events:none;">`;
-    frameEvents.forEach(e => {
-      const m = EVENT_META[e.type];
-      html += `<div style="background:${m.colorHex}22;border:1px solid ${m.colorHex};border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:${m.colorHex};backdrop-filter:blur(4px);">
-        ${m.icon} ${m.label}
-      </div>`;
-    });
-    html += `</div>`;
-  }
-  aCanvas.innerHTML = html;
+})();
+
+// -- Frame preview on chart click --
+const VIDEO_SRC = 'gameplaytrimmed.mp4';
+const videoOverlay = document.getElementById('frame-preview-overlay');
+const frameVideoEl = document.getElementById('frame-preview-video');
+const frameInfoEl = document.getElementById('frame-preview-info');
+
+if (VIDEO_SRC) {
+    frameVideoEl.src = VIDEO_SRC;
 }
 
-function renderLog() {
-  const el = document.getElementById("log-content");
-  if (events.length === 0) {
-    el.innerHTML = `<div class="log-empty">No events logged yet.<br>Navigate the video and flag events as you see them.</div>`;
-    return;
-  }
-  el.innerHTML = events.map(e => {
-    const m = EVENT_META[e.type];
-    return `<div class="log-item" onclick="seekToFrame(${e.frame})">
-      <div class="log-dot" style="background:${m.colorHex}"></div>
-      <div class="log-info">
-        <div class="log-label">${m.icon} ${m.label}</div>
-        <div class="log-meta">Frame ${e.frame} · ${formatTime(e.time)}</div>
-      </div>
-      <button class="log-delete" onclick="event.stopPropagation();deleteEvent(${e.id})" title="Remove">✕</button>
-    </div>`;
-  }).join("");
+function showFramePreview(timestamp, position, raceNum, relativeTime) {
+    if (!VIDEO_SRC) {
+        alert('Video file not available. Re-run with --video to enable frame preview.');
+        return;
+    }
+    frameVideoEl.currentTime = timestamp;
+    frameInfoEl.innerHTML =
+        '<div class="info-item"><span class="info-label">Race</span><span class="info-value">' + raceNum + '</span></div>' +
+        '<div class="info-item"><span class="info-label">Race Time</span><span class="info-value">' + relativeTime + 's</span></div>' +
+        '<div class="info-item"><span class="info-label">Video Time</span><span class="info-value">' + timestamp + 's</span></div>' +
+        '<div class="info-item"><span class="info-label">Position</span><span class="info-value">' + ordinal(position) + '</span></div>';
+    videoOverlay.classList.add('active');
+    frameVideoEl.pause();
 }
 
-function renderTimelineMarkers() {
-  document.querySelectorAll(".event-marker").forEach(el => el.remove());
-  const wrap = document.getElementById("scrubber-wrap");
-  const maxF = Math.floor(duration * fps);
-  events.forEach(e => {
-    const pos = (e.frame / maxF) * 100;
-    const m = EVENT_META[e.type];
-    const marker = document.createElement("div");
-    marker.className = "event-marker";
-    marker.style.left = pos + "%";
-    marker.style.background = m.colorHex;
-    marker.title = `${m.label} @ frame ${e.frame}`;
-    wrap.appendChild(marker);
-  });
-  // Also mark place boxes
-  Object.keys(placeBoxes).forEach(f => {
-    const pos = (parseInt(f) / maxF) * 100;
-    const marker = document.createElement("div");
-    marker.className = "event-marker";
-    marker.style.left = pos + "%";
-    marker.style.background = "#F5C542";
-    marker.style.opacity = "0.4";
-    marker.style.width = "2px";
-    wrap.appendChild(marker);
-  });
+function closeFramePreview() {
+    videoOverlay.classList.remove('active');
+    frameVideoEl.pause();
 }
 
-// ===================== EXPORT =====================
-function exportJSON() {
-  const data = {
-    video: videoName,
-    fps,
-    totalFrames: Math.floor(duration * fps),
-    duration: duration,
-    raceResult: raceResult,
-    placeBoxes: Object.entries(placeBoxes).map(([frame, box]) => ({
-      frame: parseInt(frame),
-      time: (parseInt(frame) / fps).toFixed(3),
-      bbox: { x1: box.x1.toFixed(2), y1: box.y1.toFixed(2), x2: box.x2.toFixed(2), y2: box.y2.toFixed(2) },
-    })),
-    events: events.map(e => ({
-      type: e.type,
-      label: EVENT_META[e.type].label,
-      frame: e.frame,
-      time: (e.frame / fps).toFixed(3),
-    })),
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url;
-  a.download = `${videoName || "mk-race"}-annotations.json`;
-  a.click(); URL.revokeObjectURL(url);
-}
-
-// ===================== KEYBOARD =====================
-document.addEventListener("keydown", (e) => {
-  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") return;
-  const key = e.key;
-  switch (key) {
-    case " ": e.preventDefault(); togglePlay(); break;
-    case "ArrowRight": e.preventDefault(); stepFrame(e.shiftKey ? 10 : 1); break;
-    case "ArrowLeft": e.preventDefault(); stepFrame(e.shiftKey ? -10 : -1); break;
-    case "b": case "B": toggleBboxDraw(); break;
-    case "Enter":
-      e.preventDefault();
-      if (annotating) submitAndNext();
-      else startAnnotation();
-      break;
-    case "1": flagEvent("lightning"); break;
-    case "2": flagEvent("blue_shell"); break;
-    case "3": flagEvent("star"); break;
-    case "4": flagEvent("bullet_bill"); break;
-    case "5": flagEvent("item_pickup"); break;
-    case "6": flagEvent("fall"); break;
-    case "7": flagEvent("race_over"); break;
-  }
+videoOverlay.addEventListener('click', function(e) {
+    if (e.target === videoOverlay) closeFramePreview();
 });
 
-function escapeHtml(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeFramePreview();
+});
 </script>
 </body>
 </html>
